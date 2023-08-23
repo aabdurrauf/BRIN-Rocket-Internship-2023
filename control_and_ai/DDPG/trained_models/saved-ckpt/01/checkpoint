@@ -1,0 +1,6 @@
+model_checkpoint_path: "D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/xplane-train-01/DDPG.ckpt-25"
+all_model_checkpoint_paths: "D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/xplane-train-01/DDPG.ckpt-5"
+all_model_checkpoint_paths: "D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/xplane-train-01/DDPG.ckpt-10"
+all_model_checkpoint_paths: "D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/xplane-train-01/DDPG.ckpt-15"
+all_model_checkpoint_paths: "D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/xplane-train-01/DDPG.ckpt-20"
+all_model_checkpoint_paths: "D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/xplane-train-01/DDPG.ckpt-25"
