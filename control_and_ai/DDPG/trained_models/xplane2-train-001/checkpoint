@@ -1,0 +1,2 @@
+model_checkpoint_path: "D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/xplane2-train-001/DDPG.ckpt-1"
+all_model_checkpoint_paths: "D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/xplane2-train-001/DDPG.ckpt-1"

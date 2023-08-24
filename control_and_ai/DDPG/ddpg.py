@@ -8,7 +8,7 @@ Description: Experience buffer.
 import tensorflow as tf
 import numpy as np
 import os
-from actor import Actor
+from actor2 import Actor
 from critic import Critic
 
 class ExperienceBuffer():
@@ -63,7 +63,7 @@ class DDPG():
         self.critic = Critic(self.sess, len(action_space_bounds), env_space_size, critic_learning_rate, gamma, optimizer=tf.train.AdamOptimizer)
 
         model_vars = tf.trainable_variables()
-        self.saver = tf.train.Saver(model_vars, max_to_keep=50)
+        self.saver = tf.train.Saver(model_vars, max_to_keep=100)
 
         # directories for saving models, etc
         if model_dir is None:
@@ -84,7 +84,7 @@ class DDPG():
         self.sess.run(tf.global_variables_initializer())
 
         # if we are not retraining from scratch, just restore weights
-        if retrain == False:
+        if not retrain:
             self.saver.restore(self.sess, tf.train.latest_checkpoint(self.model_dir))
 
     def get_action(self, state, explore=True):

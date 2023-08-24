@@ -66,6 +66,7 @@ class XPlane11(gym.Env):
         assert len(action) == 4
 
         # check if crash
+        self.client.clearBuffer()
         try:
             value = self.client.getDREF("sim/flightmodel2/misc/has_crashed")
             self.crash = value[0]
@@ -237,13 +238,13 @@ class XPlane11(gym.Env):
 
         # penalty for increasing vertical velocity
         if state[3] > 0:
-            shaping -= state[3] * 1
+            shaping -= state[3] * 100
 
         # penalty for error pitch and roll
         shaping -= ((abs(state[4]) * 40) + (abs(state[5]) * 100)) * 1
 
         # reward for decreasing velocity under 2000 ft meters
-        if self.alti <= 3190:
+        if self.alti <= 3000:
             shaping = shaping + (100 + self.ver_vel * 2)
 
         # give positive reward if pitch and roll values are small
@@ -306,10 +307,10 @@ def get_state_sample(env, xpc_client, samples=100, normal_state=True, untransfor
         r = return_value[1]
         done = return_value[2]
         info = return_value[3]
-        if normal_state:
-            state_samples.append(s)
-        else:
-            print("Error: state samples not appended")
+        # if normal_state:
+        #     state_samples.append(s)
+        # else:
+        #     print("Error: state samples not appended")
         # else:
         #     state_samples.append(
         #         env.get_state_with_barge_and_landing_coordinates(untransformed_state=untransformed_state))
@@ -322,7 +323,18 @@ def get_state_sample(env, xpc_client, samples=100, normal_state=True, untransfor
                     crash = 1
                     env.client.clearBuffer()
             env._reset()
+            # print("state samples not appended")
             # crash = True
+        else:
+            if s[0] != 0 and s[1] != 0 and s[2] != 0:
+                state_samples.append(s)
+                # print("state appended to sample:", s)
+            else:
+                # print("state samples not appended")
+                pass
+            # else:
+            #     state_samples.append(
+            #         env.get_state_with_barge_and_landing_coordinates(untransformed_state=untransformed_state))
 
     # env.close()
     return state_samples

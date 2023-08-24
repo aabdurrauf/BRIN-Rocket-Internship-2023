@@ -229,6 +229,7 @@ class XPlaneConnect(object):
         # Read response
         resultBuf = self.readUDP()
         if len(resultBuf) != 31:
+            print(len(resultBuf))
             raise ValueError("Unexpected response length.")
 
         result = struct.unpack(b"<4sxffffbfBf", resultBuf)

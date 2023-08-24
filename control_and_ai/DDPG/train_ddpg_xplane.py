@@ -5,6 +5,8 @@
 
 
 import os
+import time
+
 # import time
 
 import numpy as np
@@ -30,20 +32,6 @@ eps.append(OUPolicy(0, 0.2, 0.4))
 eps.append(OUPolicy(0, 0.2, 0.4))
 eps.append(OUPolicy(0.5, 0.2, 0.4))
 
-# genes = [0, 0, 0, 0, 1, 0, 0, 0, 1, 1]
-
-# simulation_settings = {'Side Engines': True,
-#                        'Clouds': True,
-#                        'Vectorized Nozzle': False,
-#                        'Graph': False,
-#                        'Render': False,
-#                        'Starting Y-Pos Constant': 1,
-#                        'Initial Force': 'random',
-#                        'Rows': 1,
-#                        'Columns': 2,
-#                        'Episodes': 500,
-#                        'Genes': genes}
-# env = RocketLander(simulation_settings)
 client = xpc.XPlaneConnect()
 env = XPlane11(client)
 
@@ -55,7 +43,7 @@ TEST = False  # Test the model
 NUM_EPISODES = 30
 SAVE_MOD = 1
 SAVE_REWARD = True  # Export reward log as .xlsx
-TRAIN_NUM = "32"
+TRAIN_NUM = "35"
 NAME = "xplane-train-" + TRAIN_NUM  # Model name
 
 model_dir = 'D:/Programming/Python/rocketlander/control_and_ai/DDPG/trained_models/' + NAME
@@ -84,32 +72,36 @@ def train(env, agent):
     util = Utils()
     state_samples = get_state_sample(env=env, xpc_client=client, samples=500, normal_state=True)
     print("finished gathering state samples")
-    # time.sleep(15)
 
     util.create_normalizer(state_sample=state_samples)
     if SAVE_REWARD:
         rew = []
         ep = []
 
-    # the starship might still ih the air, wait until it crashes and reset itself
-    # crash = 0
-    # while not crash:
-    #     try:
-    #         crash = env.client.getDREF("sim/flightmodel2/misc/has_crashed")[0]
-    #     except Exception as e:
-    #         crash = 0
-    #
-    crash = 1
+    crash = 2
+    # this loop will take has_crashed dataref
+    # until it gets the value without error
+    while crash == 2:
+        try:
+            crash = env.client.getDREF("sim/flightmodel2/misc/has_crashed")[0]
+        except Exception as e:
+            crash = 2
+            env.client.clearBuffer()
+
+    if crash == 0:  # if rocket still in air, wait until crash
+        while not crash:
+            try:
+                crash = env.client.getDREF("sim/flightmodel2/misc/has_crashed")[0]
+            except Exception as e:
+                crash = 0
+                env.client.clearBuffer()
+    # the rocket is currently crash, wait until x-plane reset the rocket
     while crash:
         try:
             crash = env.client.getDREF("sim/flightmodel2/misc/has_crashed")[0]
         except Exception as e:
             crash = 1
             env.client.clearBuffer()
-        # time.sleep(0.01)
-
-    # env.client.sendDREF("sim/flightmodel2/misc/has_crashed", 0)
-    # time.sleep(2)
 
     for episode in range(1, NUM_EPISODES + 1):
         env.client.clearBuffer()
@@ -120,8 +112,6 @@ def train(env, agent):
         state = env.reset()
         state = util.normalize(state)
         max_steps = 500  # default max_steps = 500
-        max_step_reached = False
-        # time.sleep(2)
 
         for t in range(max_steps):
             old_state = state
@@ -134,9 +124,19 @@ def train(env, agent):
             state = util.normalize(state)
 
             # penalty if max step is reached but have not landed
-            if t >= max_steps:
+            if t >= max_steps-1:
                 reward = -5000
                 # max_step_reached = True
+                sent = False
+                # shutdown all engine and let the rocket fall down
+                while not sent:
+                    try:
+                        control_values = [0, 0, 0, 0]
+                        env.client.sendCTRL(control_values)
+                        sent = True
+                    except Exception as e:
+                        sent = False
+                time.sleep(30)
 
             # check again if crash happened but have not detected
             env.client.clearBuffer()
@@ -239,12 +239,13 @@ def train(env, agent):
                                                'pos_z', 'ver. velocity', 'x velocity', 'z velocity', 'pitch',
                                                'roll', 'yaw'])
         if episode == 1:
-            with pd.ExcelWriter(model_dir + f"/DDPG_action-history_{NAME}_test-{TRAIN_NUM}_{NUM_EPISODES}.xlsx") as writer:
+            with pd.ExcelWriter(model_dir + f"/DDPG_action-history_{NAME}_{NUM_EPISODES}.xlsx") as writer:
                 action_history.to_excel(writer, sheet_name=f"episode_{episode}")
         else:
-            with pd.ExcelWriter(model_dir + f"/DDPG_action-history_{NAME}_test-{TRAIN_NUM}_{NUM_EPISODES}.xlsx", mode='a') as writer:
+            with pd.ExcelWriter(model_dir + f"/DDPG_action-history_{NAME}_{NUM_EPISODES}.xlsx",
+                                mode='a') as writer:
                 action_history.to_excel(writer, sheet_name=f"episode_{episode}")
-    # env.black_box
+
     if SAVE_REWARD:
         os.makedirs(model_dir, exist_ok=True)
         reward_data = pd.DataFrame(list(zip(ep, rew)), columns=['episode', 'reward'])
